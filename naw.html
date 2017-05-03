@@ -1,0 +1,122 @@
+  <!DOCTYPE html>
+  <html>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
+  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
+
+
+  <script>
+
+  var request = new XMLHttpRequest();
+  request.open("GET", "/home/agalal/Downloads/DDproj/test.json", false);
+  request.send(null);
+  var my_JSON_object = JSON.parse(request.responseText);
+  console.log("Done parsing!");
+
+  var M_name;
+  var Module;
+  for (M_name in my_JSON_object["modules"])
+      Module = my_JSON_object["modules"][M_name];
+
+  //console.log("Module has:");
+  //console.log(Module["attributes"]["src"]);
+
+  var g = new graphlib.Graph();
+
+  var ports, p;
+  var bits = [];
+  var names = [];
+  var index = 0;
+  var maxBitValue;        //maximum value given to i/o
+  var lastInputBit;
+
+  for (p in Module["ports"])
+  {
+    ports = Module["ports"][p];
+    names[index] = p;             //store all the ports names
+    /*console.log("port name:");
+    console.log(p);
+    console.log(ports["direction"]);*/
+
+    var j;
+    for (j in ports["bits"])
+        bits[index] = ports["bits"][j];     //store all the ports bits
+
+    maxBitValue = bits[index];              //to get maximum bit used for inputs
+    if(Module["ports"][p]["direction"] == "input")
+      lastInputBit = bits[index];
+
+    //console.log(bits[index]); bits.toString(); names.toString();
+
+    //clk,rst,en won't be taken into paths so name is defaultValue
+    //but others will have their direction normally
+
+    if(p != "clk" && p != "en" && p != "rst")
+        g.setNode(bits[index++],Module["ports"][p]["direction"]); //TODO
+    else
+        g.setNode(bits[index++],"default"); //TODO
+
+    //console.log(g.node(bits[index-1]));
+  }
+    //console.log("nodes after for loop:");
+    //console.log(g.nodes());
+    console.log("Max bit value is:" + maxBitValue);
+    //  console.log(lastInputBit);
+
+  for(p in Module["cells"])   //adding the cells as nodes to the graph
+    g.setNode(p,Module["cells"][p]["type"]);
+
+  g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
+  //console.log("Total nodes:");
+  //console.log(g.nodes());
+  //Adding edges
+  var toTemp = [];
+  index = 0;
+  for(p in Module["cells"])
+  {
+    console.log("Cell name: " + p);
+    for(it in Module["cells"][p]["connections"])
+    {
+      var pathFound = Module["cells"][p]["connections"][it];
+      if(it == "Y" || it == "Q")  //output to the gate is a wire
+      {
+        console.log("In output part with it: " + pathFound);
+        if(pathFound >= lastInputBit+1 && pathFound <= maxBitValue)     //if output to gate is output to circuit
+          g.setEdge(p,pathFound);
+        else {
+          g.setEdge(p,"temp",pathFound);
+          toTemp[index++] = p;
+        }
+
+      }else {                  //input to gate
+        console.log("In input part with it: " + pathFound);
+        if(pathFound <= maxBitValue) //input to gate is input to whole circuit
+          g.setEdge(pathFound,p);
+        else {                //input to the gate is a wire
+          console.log("Input is a wire");
+          for(var element in toTemp)
+          {
+            //console.log(g.edge(toTemp[element],"temp"))
+            //console.log(pathFound);
+            if(Number(g.edge(toTemp[element],"temp")) == Number(pathFound))
+            {
+              //console.log("I FOUND SOMETHINGNNGNGNGNGNG");
+              g.setEdge(toTemp[element],p);
+              break;
+            }
+          }
+        }
+      }
+      //console.log("The edges now are: " + g.edges());
+    }
+  }
+  g.removeNode("temp");
+  //console.log("Nodes:");
+  //console.log(g.nodes());
+  for(p in Module["cells"])
+      {console.log("cell: " + p + " has ");
+      console.log(g.nodeEdges(p));}
+  //console.log(g.edges());
+  </script>
+  </html>
