@@ -2,14 +2,14 @@
   <html>
 
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
+  <script src="/home/nawawy/dd2_2/amr/jquery-3.2.1.min.js"></script>
+  <script src="/home/nawawy/dd2_2/amr/graphlib.min.js"></script>
 
 
   <script>
 
   var request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/test.json", false);
+  request.open("GET", "file:///home/nawawy/dd2_2/amr/test.json", false);
   request.send(null);
   var my_JSON_object = JSON.parse(request.responseText);
   console.log("Done parsing!");
@@ -117,6 +117,85 @@
   for(p in Module["cells"])
       {console.log("cell: " + p + " has ");
       console.log(g.nodeEdges(p));}
-  //console.log(g.edges());
+
+  //var edges = g.edges();
+
+
+  var nodes = g.nodes();
+
+  var visited = {};
+  var stack = [];
+  var paths = {};
+  for ( var k = 0; k < 20; k++) // iniaize path arrays
+  {
+    paths[k] = [];
+  }
+  var isa = {};
+
+  console.log("NAWAWAWAWAWAWAWAWY");
+  getpath(0);
+
+  function getpath(uu)
+  {
+      stack.push(nodes[uu]);
+      visited[nodes[0]] = true;
+
+      while(stack.length != 0)
+      {
+        var current = stack[stack.length - 1];
+          
+        dfs(current); 
+      }
+  } 
+
+  function dfs(current)
+  {
+    var adj_nodes = g.outEdges(current);
+    
+    var iii = 0;
+
+    if(adj_nodes.length != 0)
+    {
+      for (var e in adj_nodes)
+      {
+        var target = g.node(adj_nodes[e]["w"])
+        if(!visited[adj_nodes[e]["w"]])
+          {
+            visited[adj_nodes[e]["w"]] = true;
+            stack.push(adj_nodes[e]["w"]);
+            
+            //bla
+            console.log("path:",iii++ , adj_nodes[e]["w"]);
+            
+            console.log(target);
+            
+            if (target != "DFFPOSX1" && target != "output")
+            {
+              paths[0].push(adj_nodes[e]["w"]);
+            }
+            else
+            {
+
+            }
+            if (target == "output")
+            {
+              isa = paths;
+              console.log("YAAAA",isa);
+            }
+            
+            return;
+          }
+          else
+          {
+            stack.pop();
+          }
+      }
+    } 
+    else
+      stack.pop();
+  }
+
+  console.log(paths);
+
   </script>
   </html>
