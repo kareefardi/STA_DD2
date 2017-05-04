@@ -2,14 +2,14 @@
   <html>
 
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
+  <script src="/home/nawawy/dd2_2/amr/jquery-3.2.1.min.js"></script>
+  <script src="/home/nawawy/dd2_2/amr/graphlib.min.js"></script>
 
 
   <script>
 
   var request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/test.json", false);
+  request.open("GET", "file:///home/nawawy/dd2_2/amr/test.json", false);
   request.send(null);
   var my_JSON_object = JSON.parse(request.responseText);
   console.log("Done parsing!");
@@ -117,6 +117,51 @@
   for(p in Module["cells"])
       {console.log("cell: " + p + " has ");
       console.log(g.nodeEdges(p));}
-  //console.log(g.edges());
+
+  //var edges = g.edges();
+
+
+  var nodes = g.nodes();
+  var visited = {};
+  var stack = [];
+
+ 
+
+  var iii = 0;
+  stack.push(nodes[0]);
+  visited[nodes[0]] = true;
+  console.log("NAWAWAWAWAWAWAWAWY");
+  while(stack.length != 0)
+  {
+    var current = stack[stack.length - 1];
+    //console.log(g.node(nodes[nn]), nodes[nn]);   
+    dfs(current); 
+  }
+
+  function dfs(s)
+  {
+    var adj_nodes = g.outEdges(s);
+    
+    if(adj_nodes.lenght != 0)
+    {
+      for (var e in adj_nodes)
+      {
+        if(!visited[adj_nodes[e]["w"]])
+          {
+            visited[adj_nodes[e]["w"]] = true;
+            stack.push(adj_nodes[e]["w"]);
+            console.log("path:",iii++ , adj_nodes[e]["w"]);
+            return;
+          }
+          else
+          {
+            stack.pop();
+          }
+      }
+    } 
+    else
+      stack.pop();
+  }
+
   </script>
   </html>
