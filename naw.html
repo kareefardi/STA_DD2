@@ -131,10 +131,12 @@
     paths[k] = [];
   }
   var isa = {};
-
+  var iii = 0;
+  var ii = 0;
+  
   console.log("NAWAWAWAWAWAWAWAWY");
   getpath(0);
-
+  
   function getpath(uu)
   {
       stack.push(nodes[uu]);
@@ -148,11 +150,11 @@
       }
   } 
 
+  
   function dfs(current)
   {
     var adj_nodes = g.outEdges(current);
-    
-    var iii = 0;
+    // ii = 0;
 
     if(adj_nodes.length != 0)
     {
@@ -164,24 +166,28 @@
             visited[adj_nodes[e]["w"]] = true;
             stack.push(adj_nodes[e]["w"]);
             
+          
             //bla
             console.log("path:",iii++ , adj_nodes[e]["w"]);
             
             console.log(target);
-            
-            if (target != "DFFPOSX1" && target != "output")
-            {
-              paths[0].push(adj_nodes[e]["w"]);
-            }
-            else
-            {
 
+            paths[ii].push(adj_nodes[e]["w"]);
+            
+            if (target == "DFFPOSX1" || target == "output")
+            {
+              console.log(ii, paths[ii]);
+              ii++;
+              console.log(ii);
+              paths[ii].push(adj_nodes[e]["w"]);
             }
-            if (target == "output")
+            
+
+            /*if (target == "output")
             {
               isa = paths;
               console.log("YAAAA",isa);
-            }
+            }*/
             
             return;
           }
@@ -195,7 +201,7 @@
       stack.pop();
   }
 
-  console.log(paths);
+  //console.log(paths);
 
   </script>
   </html>
