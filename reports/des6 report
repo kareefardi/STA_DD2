@@ -1,0 +1,14 @@
+All timing paths for des6.v
+
+input-output
+2
+$abc$113$auto$blifparse.cc:286:parse_blif$115
+4
+
+
+
+input-output
+3
+$abc$113$auto$blifparse.cc:286:parse_blif$114
+$abc$113$auto$blifparse.cc:286:parse_blif$115
+4

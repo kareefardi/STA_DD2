@@ -1,0 +1,14 @@
+All timing paths in des5.v
+
+input-output
+2
+$abc$49$auto$blifparse.cc:286:parse_blif$51
+4
+
+
+
+input-output
+3
+$abc$49$auto$blifparse.cc:286:parse_blif$50
+$abc$49$auto$blifparse.cc:286:parse_blif$51
+4

@@ -1,0 +1,217 @@
+  <!DOCTYPE html>
+  <html>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
+  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
+
+
+  <script>
+
+  var request = new XMLHttpRequest();
+  request.open("GET", "/home/agalal/Downloads/DDproj/zzz.json", false);
+  request.send(null);
+ var my_JSON_object = JSON.parse(request.responseText);
+
+ var M_name;
+ var Module;
+ for (M_name in my_JSON_object["modules"])
+     Module = my_JSON_object["modules"][M_name];
+
+ var g = new graphlib.Graph();
+ var ports, p;
+ var bits = [];
+ var names = [];
+ var index = 0;
+ var maxBitValue;        //maximum value given to i/o
+ var lastInputBit;
+ for (p in Module["ports"])
+ {
+   ports = Module["ports"][p];
+   names[index] = p;             //store all the ports names
+
+   var j;
+   for (j in ports["bits"])
+       bits[index] = ports["bits"][j];     //store all the ports bits
+   maxBitValue = bits[index];              //to get maximum bit used for inputs
+   if(Module["ports"][p]["direction"] == "input")
+     lastInputBit = bits[index];
+
+   //rst,en won't be taken into paths so name is defaultValue
+   //but others will have their direction normally
+
+   if(p != "en" && p != "rst")
+       g.setNode(bits[index++],Module["ports"][p]["direction"]); //TODO
+   else
+       g.setNode(bits[index++],"default"); //TODO
+ }
+
+
+ for(p in Module["cells"])   //adding the cells as nodes to the graph
+   g.setNode(p,Module["cells"][p]["type"]);
+ g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
+
+ //Adding edges
+ var toTemp = [];
+ var fromTemp = [];
+ index = 0; index2 = 0;
+ for(p in Module["cells"])
+ {
+   //console.log("cell:" + p);
+   for(it in Module["cells"][p]["connections"])
+   {
+     var found = false;
+     var pathFound = Module["cells"][p]["connections"][it];
+     if(it == "Y" || it == "Q")  //output to the gate is a wire
+     {
+       //console.log("output");
+       if(pathFound >= lastInputBit+1 && pathFound <= maxBitValue)     //if output to gate is output to circuit
+         {g.setEdge(p,pathFound);}// console.log(1);}
+       else {
+         //console.log(2);
+         for(var element in fromTemp)
+         {
+           if(Number(g.edge("temp",fromTemp[element])) == Number(pathFound))
+           {
+             g.setEdge(p,fromTemp[element]);
+             found = true;
+           }
+         }
+         if(!found)
+         {g.setEdge(p,"temp",pathFound);
+         toTemp[index++] = p;}
+       }
+     }else {                  //input to gate
+       //console.log("input");
+       if(pathFound <= maxBitValue) //input to gate is input to whole circuit
+         {g.setEdge(pathFound,p);}//console.log(1);}
+       else {                //input to the gate is a wire
+         //console.log(2);
+         for(var element in toTemp)
+         {
+           if(Number(g.edge(toTemp[element],"temp")) == Number(pathFound))
+           {
+             g.setEdge(toTemp[element],p);
+             found = true;
+           }
+         }
+         if(!found)
+         {
+           g.setEdge("temp",p,pathFound);
+           fromTemp[index2++]=p;
+         }
+       }
+     }
+   }
+ }
+g.removeNode("temp");
+var nodes = g.nodes();
+for(var node in nodes)
+{
+    if(g.node(nodes[node]) == "output")
+    {
+      //console.log("cell of ");
+      var outEdges = g.outEdges(nodes[node]);
+      for(var edge in outEdges)
+        g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
+    }
+}
+ //for(p in nodes)
+   //{console.log("cell: " + nodes[p] + " has ");
+   //console.log(g.nodeEdges(nodes[p]));}
+
+   var paths = [];
+   var path_type = [];
+   for ( var k = 0; k < 100; k++) // iniaize path arrays
+   {
+     paths[k] = [];
+   }
+   var ii = 0;
+
+   //console.log("NAWAWY");
+
+   for(var ee = 0; ee < nodes.length; ee++)
+   {
+     //console.log("At start of loop: " + ee + " " + g.node(nodes[ee]));
+     if (String(g.node(nodes[ee])) == "input" || String(g.node(nodes[ee])) == "DFFPOSX1")
+       {
+         paths[ii].push(nodes[ee]);
+         //console.log("we have ii: " + ii);
+         //console.log("we choose node:" + nodes[ee]);
+         dfs(nodes[ee]);
+         //console.log("paths after this node");
+         //console.log(paths);
+       }
+    }
+    //console.log(paths);
+    for (var kk = 0; kk < ii; kk++)
+    {
+      var first, last;
+
+      first = paths[kk][0];
+      last = paths[kk][paths[kk].length - 1];
+
+      var ftype, ltype;
+
+      ftype = g.node(first);
+      ltype = g.node(last);
+
+      if (ftype == "input" && ltype == "output")
+        path_type[kk] = "input-output";
+      else
+      if (ftype == "DFFPOSX1" && ltype == "DFFPOSX1")
+        path_type[kk] = "reg-reg";
+      else
+      if (ftype == "DFFPOSX1" && ltype == "output")
+        path_type[kk] = "reg-output";
+     if (ftype == "input" && ltype == "DFFPOSX1")
+        path_type[kk] = "input-reg";
+
+        console.log(path_type[kk],"====",paths[kk]);
+    }
+
+   function dfs(current)
+   {
+     var adj_nodes = g.outEdges(current);
+
+     if(adj_nodes.length != 0)
+     {
+       for (var e in adj_nodes)
+       {
+         //console.log(paths);
+         //console.log("we have node in dfs: " + current);
+         //console.log(adj_nodes);
+         //console.log(e + " adj is " + adj_nodes[e]["w"]);
+         var target = g.node(adj_nodes[e]["w"])
+         if(!(target == "DFFPOSX1" || target == "output"))
+           {
+             paths[ii].push(adj_nodes[e]["w"]);
+             dfs(adj_nodes[e]["w"]);
+             //console.log("popped");
+             //console.log("I am in " + current);
+             //paths[ii].pop();
+             //console.log("paths after popping");
+             //for (var lol in paths)
+                //console.log(paths[lol]);
+           }
+           else {   //if target is DFF or output
+             //console.log("ENDED A PATH HERE");
+             paths[ii].push(adj_nodes[e]["w"]);
+             ii++;
+             //var esc = false;
+             for(var i in paths[ii-1])
+                  paths[ii].push(paths[ii-1][i]);
+             paths[ii].pop();
+              //console.log(paths [lol]);
+             //console.log(paths);
+             break;
+           }
+       }
+            if(paths[ii].length != 0)
+                {paths[ii].pop();} //console.log("popped after for");}
+     }
+   }
+
+
+   </script>
+   </html>
