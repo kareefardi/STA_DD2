@@ -9,7 +9,7 @@
   <script>
 
   var request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/zzz.json", false);
+  request.open("GET", "/home/agalal/Downloads/DDproj/des7.json", false);
   request.send(null);
  var my_JSON_object = JSON.parse(request.responseText);
 
@@ -167,7 +167,10 @@ for(var node in nodes)
      if (ftype == "input" && ltype == "DFFPOSX1")
         path_type[kk] = "input-reg";
 
-        console.log(path_type[kk],"====",paths[kk]);
+        console.log(path_type[kk]);
+        for(var i in paths[kk])
+          console.log(paths[kk][i]);
+        console.log('\n\n');
     }
 
    function dfs(current)
@@ -201,7 +204,8 @@ for(var node in nodes)
              //var esc = false;
              for(var i in paths[ii-1])
                   paths[ii].push(paths[ii-1][i]);
-             paths[ii].pop();
+            if(paths[ii].length != 0)
+              paths[ii].pop();
               //console.log(paths [lol]);
              //console.log(paths);
              break;
@@ -212,6 +216,11 @@ for(var node in nodes)
      }
    }
 
+   request = new XMLHttpRequest();
+   request.open("GET", "/home/agalal/Downloads/DDproj/osu035.lib", false);
+   request.send(null);
+   var osu_JSON_object = JSON.parse(request.responseText);
+   
 
    </script>
    </html>
