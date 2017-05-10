@@ -5,13 +5,13 @@
   <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
   <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
 
-
   <script>
+/*Uncomment 160-163 to display the paths*/
 
   var request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/des7.json", false);
+  request.open("GET", "/home/agalal/Downloads/DDproj/Testing/des7.json", false);
   request.send(null);
- var my_JSON_object = JSON.parse(request.responseText);
+  var my_JSON_object = JSON.parse(request.responseText);
 
  var M_name;
  var Module;
@@ -25,6 +25,11 @@
  var index = 0;
  var maxBitValue;        //maximum value given to i/o
  var lastInputBit;
+
+ var inputTransitionMap = [];
+ for(var i = 0; i < 200; i++)
+    inputTransitionMap[i] = [];
+ var indexMap = 0;
  for (p in Module["ports"])
  {
    ports = Module["ports"][p];
@@ -41,14 +46,15 @@
    //but others will have their direction normally
 
    if(p != "en" && p != "rst")
-       g.setNode(bits[index++],Module["ports"][p]["direction"]); //TODO
+       g.setNode(bits[index],Module["ports"][p]["direction"]); //TODO
    else
-       g.setNode(bits[index++],"default"); //TODO
+       g.setNode(bits[index],"default"); //TODO
+   inputTransitionMap[indexMap++].push(bits[index++]);
  }
 
 
  for(p in Module["cells"])   //adding the cells as nodes to the graph
-   g.setNode(p,Module["cells"][p]["type"]);
+   {g.setNode(p,Module["cells"][p]["type"]); inputTransitionMap[indexMap++].push(p);}
  g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
 
  //Adding edges
@@ -57,18 +63,15 @@
  index = 0; index2 = 0;
  for(p in Module["cells"])
  {
-   //console.log("cell:" + p);
    for(it in Module["cells"][p]["connections"])
    {
      var found = false;
      var pathFound = Module["cells"][p]["connections"][it];
      if(it == "Y" || it == "Q")  //output to the gate is a wire
      {
-       //console.log("output");
        if(pathFound >= lastInputBit+1 && pathFound <= maxBitValue)     //if output to gate is output to circuit
          {g.setEdge(p,pathFound);}// console.log(1);}
        else {
-         //console.log(2);
          for(var element in fromTemp)
          {
            if(Number(g.edge("temp",fromTemp[element])) == Number(pathFound))
@@ -82,11 +85,9 @@
          toTemp[index++] = p;}
        }
      }else {                  //input to gate
-       //console.log("input");
        if(pathFound <= maxBitValue) //input to gate is input to whole circuit
          {g.setEdge(pathFound,p);}//console.log(1);}
        else {                //input to the gate is a wire
-         //console.log(2);
          for(var element in toTemp)
          {
            if(Number(g.edge(toTemp[element],"temp")) == Number(pathFound))
@@ -110,15 +111,11 @@ for(var node in nodes)
 {
     if(g.node(nodes[node]) == "output")
     {
-      //console.log("cell of ");
       var outEdges = g.outEdges(nodes[node]);
       for(var edge in outEdges)
         g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
     }
 }
- //for(p in nodes)
-   //{console.log("cell: " + nodes[p] + " has ");
-   //console.log(g.nodeEdges(nodes[p]));}
 
    var paths = [];
    var path_type = [];
@@ -128,22 +125,14 @@ for(var node in nodes)
    }
    var ii = 0;
 
-   //console.log("NAWAWY");
-
    for(var ee = 0; ee < nodes.length; ee++)
    {
-     //console.log("At start of loop: " + ee + " " + g.node(nodes[ee]));
      if (String(g.node(nodes[ee])) == "input" || String(g.node(nodes[ee])) == "DFFPOSX1")
        {
          paths[ii].push(nodes[ee]);
-         //console.log("we have ii: " + ii);
-         //console.log("we choose node:" + nodes[ee]);
          dfs(nodes[ee]);
-         //console.log("paths after this node");
-         //console.log(paths);
        }
     }
-    //console.log(paths);
     for (var kk = 0; kk < ii; kk++)
     {
       var first, last;
@@ -167,10 +156,10 @@ for(var node in nodes)
      if (ftype == "input" && ltype == "DFFPOSX1")
         path_type[kk] = "input-reg";
 
-        console.log(path_type[kk]);
-        for(var i in paths[kk])
-          console.log(paths[kk][i]);
-        console.log('\n\n');
+       //console.log(path_type[kk]);
+        //for(var i in paths[kk])
+          //console.log(paths[kk][i]);
+        //console.log('\n\n');
     }
 
    function dfs(current)
@@ -181,46 +170,113 @@ for(var node in nodes)
      {
        for (var e in adj_nodes)
        {
-         //console.log(paths);
-         //console.log("we have node in dfs: " + current);
-         //console.log(adj_nodes);
-         //console.log(e + " adj is " + adj_nodes[e]["w"]);
          var target = g.node(adj_nodes[e]["w"])
          if(!(target == "DFFPOSX1" || target == "output"))
            {
              paths[ii].push(adj_nodes[e]["w"]);
              dfs(adj_nodes[e]["w"]);
-             //console.log("popped");
-             //console.log("I am in " + current);
-             //paths[ii].pop();
-             //console.log("paths after popping");
-             //for (var lol in paths)
-                //console.log(paths[lol]);
            }
            else {   //if target is DFF or output
-             //console.log("ENDED A PATH HERE");
              paths[ii].push(adj_nodes[e]["w"]);
              ii++;
-             //var esc = false;
              for(var i in paths[ii-1])
                   paths[ii].push(paths[ii-1][i]);
             if(paths[ii].length != 0)
               paths[ii].pop();
-              //console.log(paths [lol]);
-             //console.log(paths);
              break;
            }
        }
             if(paths[ii].length != 0)
-                {paths[ii].pop();} //console.log("popped after for");}
+                {paths[ii].pop();}
      }
    }
 
    request = new XMLHttpRequest();
-   request.open("GET", "/home/agalal/Downloads/DDproj/osu035.lib", false);
+   request.open("GET", "/home/agalal/Downloads/DDproj/osu035.json", false);
    request.send(null);
    var osu_JSON_object = JSON.parse(request.responseText);
-   
+   var tempTime = 0.1;
+
+  //Assuming trash input transition time for now
+
+  var node, allNodes = g.nodes();
+  for(node in allNodes)
+  {
+    if(g.node(node) == "input" || g.node(node) == "default")
+    {
+      inputTransitionMap[Number(node) - 2].push(tempTime);
+      tempTime += 0.1;
+    }
+  }
+
+  for(node in allNodes)
+  {
+    if(g.node(node) == "input" || g.node(node) == "default")
+    {
+      getInputTransition(node);
+      //console.log(node);
+    }
+  }
+  console.log(inputTransitionMap);
+
+  function getInputTransition(node)
+  {
+    var adjEdges = g.outEdges(node);
+    var indexEdge;
+    for(indexEdge in adjEdges)
+    {
+      var target = adjEdges[indexEdge]["w"];
+      var shouldBeChecked = check(target);
+      if(shouldBeChecked == true)
+      {
+        var i = searchMap(target);
+        var times = [];
+        var inEdges = g.inEdges(target);
+        var edgeIndex;
+        for(edgeIndex in inEdges)
+        {
+          var parent = inEdges[edgeIndex]["v"];
+          var j = searchMap(parent);
+          times.push(inputTransitionMap[j][1]);
+        }
+        var min = -1000;
+        for (var ind in times)
+          if(times[ind] > min)
+            min = times[ind];
+        inputTransitionMap[i].push(min);
+        getInputTransition(target);
+      }
+    }
+  }
+
+  function check(node)
+  {
+    var i = searchMap(node);
+    if(inputTransitionMap[i].length == 2) return false;  //checking if it was previously done
+    else
+    {
+      var inEdges = g.inEdges(node);
+      var edgeIndex;
+      for(edgeIndex in inEdges)
+      {
+        var target = inEdges[edgeIndex]["v"];
+        var i = searchMap(target);
+        if(inputTransitionMap[i].length != 2) return false;
+      }
+      return true;  // all its inputs already have their transition time
+    }
+    return false;
+  }
+
+  function searchMap(node)
+  {
+    for(var i = 0; i < g.nodeCount(); i++)
+    {
+      if(inputTransitionMap[i][0] == node)
+        return i;
+    }
+    return -1;
+  }
 
    </script>
    </html>
