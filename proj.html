@@ -26,9 +26,9 @@
  var maxBitValue;        //maximum value given to i/o
  var lastInputBit;
 
- var inputTransitionMap = [];
+ var Mapp = [];
  for(var i = 0; i < 200; i++)
-    inputTransitionMap[i] = [];
+    Mapp[i] = [];
  var indexMap = 0;
  for (p in Module["ports"])
  {
@@ -49,12 +49,12 @@
        g.setNode(bits[index],Module["ports"][p]["direction"]); //TODO
    else
        g.setNode(bits[index],"default"); //TODO
-   inputTransitionMap[indexMap++].push(bits[index++]);
+   Mapp[indexMap++].push(bits[index++]);
  }
 
 
  for(p in Module["cells"])   //adding the cells as nodes to the graph
-   {g.setNode(p,Module["cells"][p]["type"]); inputTransitionMap[indexMap++].push(p);}
+   {g.setNode(p,Module["cells"][p]["type"]); Mapp[indexMap++].push(p);}
  g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
 
  //Adding edges
@@ -105,178 +105,345 @@
      }
    }
  }
-g.removeNode("temp");
-var nodes = g.nodes();
-for(var node in nodes)
-{
-    if(g.node(nodes[node]) == "output")
-    {
-      var outEdges = g.outEdges(nodes[node]);
-      for(var edge in outEdges)
-        g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
-    }
-}
-
-   var paths = [];
-   var path_type = [];
-   for ( var k = 0; k < 100; k++) // iniaize path arrays
-   {
-     paths[k] = [];
-   }
-   var ii = 0;
-
-   for(var ee = 0; ee < nodes.length; ee++)
-   {
-     if (String(g.node(nodes[ee])) == "input" || String(g.node(nodes[ee])) == "DFFPOSX1")
-       {
-         paths[ii].push(nodes[ee]);
-         dfs(nodes[ee]);
-       }
-    }
-    for (var kk = 0; kk < ii; kk++)
-    {
-      var first, last;
-
-      first = paths[kk][0];
-      last = paths[kk][paths[kk].length - 1];
-
-      var ftype, ltype;
-
-      ftype = g.node(first);
-      ltype = g.node(last);
-
-      if (ftype == "input" && ltype == "output")
-        path_type[kk] = "input-output";
-      else
-      if (ftype == "DFFPOSX1" && ltype == "DFFPOSX1")
-        path_type[kk] = "reg-reg";
-      else
-      if (ftype == "DFFPOSX1" && ltype == "output")
-        path_type[kk] = "reg-output";
-     if (ftype == "input" && ltype == "DFFPOSX1")
-        path_type[kk] = "input-reg";
-
-       //console.log(path_type[kk]);
-        //for(var i in paths[kk])
-          //console.log(paths[kk][i]);
-        //console.log('\n\n');
-    }
-
-   function dfs(current)
-   {
-     var adj_nodes = g.outEdges(current);
-
-     if(adj_nodes.length != 0)
+ g.removeNode("temp");
+ var nodes = g.nodes();
+ for(var node in nodes)
+ {
+     if(g.node(nodes[node]) == "output")
      {
-       for (var e in adj_nodes)
-       {
-         var target = g.node(adj_nodes[e]["w"])
-         if(!(target == "DFFPOSX1" || target == "output"))
-           {
-             paths[ii].push(adj_nodes[e]["w"]);
-             dfs(adj_nodes[e]["w"]);
-           }
-           else {   //if target is DFF or output
-             paths[ii].push(adj_nodes[e]["w"]);
-             ii++;
-             for(var i in paths[ii-1])
-                  paths[ii].push(paths[ii-1][i]);
-            if(paths[ii].length != 0)
-              paths[ii].pop();
-             break;
-           }
-       }
-            if(paths[ii].length != 0)
-                {paths[ii].pop();}
+       var outEdges = g.outEdges(nodes[node]);
+       for(var edge in outEdges)
+         g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
      }
-   }
+ }
 
-   request = new XMLHttpRequest();
-   request.open("GET", "/home/agalal/Downloads/DDproj/osu035.json", false);
-   request.send(null);
-   var osu_JSON_object = JSON.parse(request.responseText);
-   var tempTime = 0.1;
+ var paths = [];
+ var path_type = [];
+ for ( var k = 0; k < 100; k++) // iniaize path arrays
+ {
+   paths[k] = [];
+ }
+ var ii = 0;
 
-  //Assuming trash input transition time for now
-
-  var node, allNodes = g.nodes();
-  for(node in allNodes)
-  {
-    if(g.node(node) == "input" || g.node(node) == "default")
-    {
-      inputTransitionMap[Number(node) - 2].push(tempTime);
-      tempTime += 0.1;
-    }
+ for(var ee = 0; ee < nodes.length; ee++)
+ {
+   if (String(g.node(nodes[ee])) == "input" || String(g.node(nodes[ee])) == "DFFPOSX1")
+     {
+       paths[ii].push(nodes[ee]);
+       dfs(nodes[ee]);
+     }
   }
-
-  for(node in allNodes)
+  for (var kk = 0; kk < ii; kk++)
   {
-    if(g.node(node) == "input" || g.node(node) == "default")
-    {
-      getInputTransition(node);
-      //console.log(node);
-    }
-  }
-  console.log(inputTransitionMap);
+    var first, last;
 
-  function getInputTransition(node)
-  {
-    var adjEdges = g.outEdges(node);
-    var indexEdge;
-    for(indexEdge in adjEdges)
-    {
-      var target = adjEdges[indexEdge]["w"];
-      var shouldBeChecked = check(target);
-      if(shouldBeChecked == true)
-      {
-        var i = searchMap(target);
-        var times = [];
-        var inEdges = g.inEdges(target);
-        var edgeIndex;
-        for(edgeIndex in inEdges)
-        {
-          var parent = inEdges[edgeIndex]["v"];
-          var j = searchMap(parent);
-          times.push(inputTransitionMap[j][1]);
-        }
-        var min = -1000;
-        for (var ind in times)
-          if(times[ind] > min)
-            min = times[ind];
-        inputTransitionMap[i].push(min);
-        getInputTransition(target);
-      }
-    }
-  }
+    first = paths[kk][0];
+    last = paths[kk][paths[kk].length - 1];
 
-  function check(node)
-  {
-    var i = searchMap(node);
-    if(inputTransitionMap[i].length == 2) return false;  //checking if it was previously done
+    var ftype, ltype;
+
+    ftype = g.node(first);
+    ltype = g.node(last);
+
+    if (ftype == "input" && ltype == "output")
+      path_type[kk] = "input-output";
     else
+    if (ftype == "DFFPOSX1" && ltype == "DFFPOSX1")
+      path_type[kk] = "reg-reg";
+    else
+    if (ftype == "DFFPOSX1" && ltype == "output")
+      path_type[kk] = "reg-output";
+   if (ftype == "input" && ltype == "DFFPOSX1")
+      path_type[kk] = "input-reg";
+
+     //console.log(path_type[kk]);
+      //for(var i in paths[kk])
+        //console.log(paths[kk][i]);
+      //console.log('\n\n');
+  }
+
+ request = new XMLHttpRequest();
+ request.open("GET", "/home/agalal/Downloads/DDproj/osu035.json", false);
+ request.send(null);
+ var osu_JSON_object = JSON.parse(request.responseText);
+
+ for(var i = 0; i < g.nodeCount(); i++)
+      Mapp[i][1] = 0;
+ pin_edges();
+
+ var tempTime = 0.1;
+
+ //Assuming trash input transition time for inputs for now
+ var node, allNodes = g.nodes();
+ for(node in allNodes)
+ {
+   if(g.node(node) == "input" || g.node(node) == "default")
+   {
+     Mapp[Number(node) - 2].push(tempTime);
+     tempTime += 0.01;                //TODO
+   }
+ }
+
+for(node in allNodes)
+{
+  if(g.node(node) == "input" || g.node(node) == "default")
+    getInputTransitionNdelay(allNodes[node]);
+}
+console.log(Mapp);
+function getInputTransitionNdelay(node)
+{
+  var adjEdges = g.outEdges(node);
+  var indexEdge;
+  for(indexEdge in adjEdges)
+  {
+    var target = adjEdges[indexEdge]["w"];
+    var shouldBeChecked = check(target);
+    if(shouldBeChecked == true)
     {
-      var inEdges = g.inEdges(node);
+      var worst = [];           //holds all the worst times we got
+      var done = false;
+      var inEdges = g.inEdges(target);
       var edgeIndex;
       for(edgeIndex in inEdges)
       {
-        var target = inEdges[edgeIndex]["v"];
-        var i = searchMap(target);
-        if(inputTransitionMap[i].length != 2) return false;
+        var parent = inEdges[edgeIndex]["v"];
+        var j = searchMap(parent);
+        var capc = Mapp[j][1]; //capacitance of parent
+        var inputT = Mapp[j][2]; //output transition time of parent
+        var pin = g.edge(parent,target);
+        if(g.node(target) == "output")
+        {
+          var x = Mapp[searchMap(parent)][2]; Mapp[searchMap(target)][2] = x;
+          calculateDelay(parent);
+          Mapp[searchMap(target)].push(Mapp[searchMap(parent)][3]);
+          done = true;
+          break;
+        }
+        var riseT = getRiseFallTime(pin,capc,inputT,target,0);
+        var fallT = getRiseFallTime(pin,capc,inputT,target,1);
+        if(riseT > fallT) worst.push(riseT);
+        else worst.push(fallT);
       }
-      return true;  // all its inputs already have their transition time
-    }
-    return false;
-  }
+      if(!done)
+      {
+        var max = -1000;
+        for (var ind in worst)
+          if(worst[ind] > max)
+            max = worst[ind];
+        var i = searchMap(target);
+        Mapp[i].push(max);
+        getInputTransitionNdelay(target);
 
-  function searchMap(node)
-  {
-    for(var i = 0; i < g.nodeCount(); i++)
+        //calculate delay
+        //calculateDelay(parent);
+        //calculateDelay(target);
+      }
+    }
+  }
+}
+function calculateDelay(node)
+{
+  var ind = searchMap(node);
+  if(Mapp[ind].length == 4) return;
+  var capc = Mapp[ind][1];
+  var trans = Mapp[ind][2];
+  var t1 = getRiseFallTime("A",capc,tarns,node,3);
+  var t2 = getRiseFallTime("A",capc,tarns,node,4);
+  if(t1 > t2)
+  Mapp[ind].push(t1);
+  else   Mapp[ind].push(t2);
+}
+function getRiseFallTime(pin,capc,inputT,target,choose)
+{
+  var location, outputPin;
+  if(choose == 1)
+    location = "fall_transition";
+  else
+  if(choose == 0)
+    location = "rise_transition";
+
+  var type = g.node(target);
+  if(String(type).localeCompare("DFFPOSX1") != 0)
+    outputPin = "Y";
+  else outputPin = "Q";
+  if(pin == "D") return 0;
+
+  console.log("type: " + String(type));
+  console.log("pin: " + pin);
+  console.log("location: " + location);
+  console.log("output pin: " + outputPin);
+
+  var capacitanceList = osu_JSON_object["cells"][type]["pins"][outputPin]["timing"][pin][location]["y_values"];
+  var diff = 1000; var closestC;
+  for(var i in capacitanceList)
+    if(Math.abs(capacitanceList[i] - capc) < diff)
     {
-      if(inputTransitionMap[i][0] == node)
-        return i;
+      diff = Math.abs(capacitanceList[i] - capc);
+      closestC = capacitanceList[i];
     }
-    return -1;
+  console.log("My incoming Capacitance is " + capc);
+  console.log("My incoming transition time is " + inputT);
+  console.log("closest Capacitance is " + closestC );
+  var transitionList = osu_JSON_object["cells"][type]["pins"][outputPin]["timing"][pin][location]["table"][closestC];
+  diff = 1000; var timeTransition;
+  for(var i in transitionList)
+  {
+    if(Math.abs(Number(i) - inputT) < diff)
+    {
+      diff = Math.abs(Number(i) - inputT);
+      timeTransition = transitionList[i];
+    }
   }
+  console.log("closest time transition is " + timeTransition );
+  console.log("\n\n");
+  return timeTransition;
+}
+function check(node)
+{
+  var i = searchMap(node);
+  if(Mapp[i].length == 3) return false;  //checking if it was previously done
+  else
+  {
+    var inEdges = g.inEdges(node);
+    var edgeIndex;
+    for(edgeIndex in inEdges)
+    {
+      var target = inEdges[edgeIndex]["v"];
+      var i = searchMap(target);
+      if(Mapp[i].length != 3) return false;
+    }
+    return true;  // all its inputs already have their transition time
+  }
+  return false;
+}
+function pin_edges()
+{
+   var edges = g.edges();
+   //var conn = my_JSON_object["modules"][]["cells"];
+   for (var e in edges)
+   {
+      var v = edges[e]["v"];
+      var w = edges[e]["w"];
+      var outpin;
 
-   </script>
-   </html>
+      if (g.node(v)!= "input" && g.node(v) != "output" && g.node(v) != "default" && g.node(w) != "input" && g.node(w) != "default" && g.node(w) != "output")
+      {
+          for (var ee in Module["cells"][v]["connections"])
+          {
+            if(ee == "Y")
+              {outpin = "Y"; break;}
+            else
+            if(ee == "Q")
+              {outpin = "Q"; break;}
+          }
+
+          for (var xx in Module["cells"][w]["connections"])
+          {
+            //  console.log(Module["cells"][v]["connections"][outpin][0], "DFDFDF");
+            if(Module["cells"][w]["connections"][xx][0] == Module["cells"][v]["connections"][outpin][0])
+            {
+                  //console.log( xx, Module["cells"][w]["type"]  );
+                  g.setEdge(edges[e], xx);
+            }
+          }
+      }
+   }
+}
+function searchMap(node)
+{
+  for(var i = 0; i < g.nodeCount(); i++)
+  {
+    if(Mapp[i][0] == node)
+      return i;
+  }
+  return -1;
+}
+function dfs(current)
+{
+  var adj_nodes = g.outEdges(current);
+
+  if(adj_nodes.length != 0)
+  {
+    for (var e in adj_nodes)
+    {
+      var target = g.node(adj_nodes[e]["w"])
+      if(!(target == "DFFPOSX1" || target == "output"))
+        {
+          paths[ii].push(adj_nodes[e]["w"]);
+          dfs(adj_nodes[e]["w"]);
+        }
+        else {   //if target is DFF or output
+          paths[ii].push(adj_nodes[e]["w"]);
+          ii++;
+          for(var i in paths[ii-1])
+               paths[ii].push(paths[ii-1][i]);
+         if(paths[ii].length != 0)
+           paths[ii].pop();
+          break;
+        }
+    }
+         if(paths[ii].length != 0)
+             {paths[ii].pop();}
+  }
+}
+function pin_edges()
+{
+   var edges = g.edges();
+   //var conn = my_JSON_object["modules"][]["cells"];
+   for (var e in edges)
+   {
+      var v = edges[e]["v"];
+      var w = edges[e]["w"];
+      var outpin;
+
+      if (g.node(v)!= "input" && g.node(v) != "output" && g.node(v) != "default" && g.node(w) != "input" && g.node(w) != "default" && g.node(w) != "output")
+      {
+          for (var ee in Module["cells"][v]["connections"])
+          {
+            if(ee == "Y")
+              {outpin = "Y"; break;}
+            else
+            if(ee == "Q")
+              {outpin = "Q"; break;}
+          }
+
+          for (var xx in Module["cells"][w]["connections"])
+          {
+            //  console.log(Module["cells"][v]["connections"][outpin][0], "DFDFDF");
+            if(Module["cells"][w]["connections"][xx][0] == Module["cells"][v]["connections"][outpin][0])
+            {
+                  //console.log( xx, Module["cells"][w]["type"]  );
+                  g.setEdge(edges[e], xx);
+                  var cap = getOutputCap(xx, Module["cells"][w]["type"]);
+
+                  var amor;
+                  for (var amr in Mapp)
+                  {
+                    if (Mapp[amr][0] == v)
+                        amor = amr;
+                  }
+                  Mapp[amor][1] = Mapp[amor][1] + cap;
+                  //console.log(Mapp);
+            }
+          }
+      }
+      else
+      {
+        if (g.node(w) != "input" && g.node(w) != "default" && g.node(w) != "output")
+        {
+            for (var xx in Module["cells"][w]["connections"])
+              {
+                  if (Module["cells"][w]["connections"][xx][0] == v)
+                        g.setEdge(edges[e], xx);
+
+              }
+        }
+      }
+   }
+}
+function getOutputCap(pin, type)
+{
+  return osu_JSON_object["cells"][type]["pins"][pin]["capacitance"];
+}
+ </script>
+ </html>
