@@ -1,13 +1,21 @@
-//getNodeName(arr, node) // get Node identifier
 //get_u(edge)            // get Edge start node
-//find_index(arr, Node)  // find Node in array
 //getDelay(Node)		 // get Node delay
+function getNodeName(node)
+{
+	return g.node(node);
+}
+
+function getDelay(node)
+{
+	Mapp[searchMap(node)][3]];
+}
+
 function find_index(arr, node)
 {
 	var i = -1;
 	var arr_len = arr.len;
 	for (var j = 0; i < arr.len; j++) {
-		if (getNodeName(arr[j]) == getNodeName(node)) {
+		if (arr[j] == node) {
 			i = j;
 			break;
 		}
@@ -15,6 +23,14 @@ function find_index(arr, node)
 	return i;
 }
 
+function get_u(edges)
+{
+	var nodes = [];
+	for (var i = 0; i < edges.length; i++)
+		nodes[i] = edges[i]["v"];
+	return nodes;
+
+}
 function CPM(graph)
 {
 	var nodes_sorted = garphlib.topsort(graph);
@@ -43,9 +59,9 @@ function CPM(graph)
 			}
 		}
 		
-		acc_delays[i] = delay + getDelay(node);
+		acc_delays[i] = delay + getDelay(nodes_sorted[i]);
 		paths[i] += ' ' + getNodeName(node);
 	}
-	crit_path = paths[i].split(' ');
+	crit_path = paths[i].split(' )
 	return crit_path;
 }
