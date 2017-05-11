@@ -7,7 +7,7 @@ function getNodeName(node)
 
 function getDelay(node)
 {
-	Mapp[searchMap(node)][3]];
+	return Mapp[searchMap(node)][3];
 }
 
 function find_index(arr, node)
