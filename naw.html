@@ -2,166 +2,427 @@
   <html>
 
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="/home/nawawy/dd2_2/amr/jquery-3.2.1.min.js"></script>
-  <script src="/home/nawawy/dd2_2/amr/graphlib.min.js"></script>
-
+  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
+  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
 
   <script>
+/*Uncomment 127-128 to display ndoes and edges
+Uncomment 138 to display the paths*/
 
   var request = new XMLHttpRequest();
-  request.open("GET", "file:///home/nawawy/dd2_2/amr/test.json", false);
+  request.open("GET", "/home/agalal/Downloads/DDproj/Testing/des7.json", false);
   request.send(null);
   var my_JSON_object = JSON.parse(request.responseText);
-  console.log("Done parsing!");
 
-  var M_name;
-  var Module;
-  for (M_name in my_JSON_object["modules"])
-      Module = my_JSON_object["modules"][M_name];
+ var M_name;
+ var Module;
+ for (M_name in my_JSON_object["modules"])
+     Module = my_JSON_object["modules"][M_name];
 
-  //console.log("Module has:");
-  //console.log(Module["attributes"]["src"]);
+ var g = new graphlib.Graph();
+ var ports, p;
+ var bits = [];
+ var names = [];
+ var index = 0;
+ var maxBitValue;        //maximum value given to i/o
+ var lastInputBit;
 
-  var g = new graphlib.Graph();
+ var Mapp = [];
+ for(var i = 0; i < 200; i++)
+    Mapp[i] = [];
+ g.setNode("origin","origin");
+ var indexMap = 0;
+ Mapp[indexMap++].push("origin");
+ for (p in Module["ports"])
+ {
+   ports = Module["ports"][p];
+   names[index] = p;             //store all the ports names
 
-  var ports, p;
-  var bits = [];
-  var names = [];
-  var index = 0;
-  var maxBitValue;        //maximum value given to i/o
-  var lastInputBit;
+   var j;
+   for (j in ports["bits"])
+       bits[index] = ports["bits"][j];     //store all the ports bits
+   maxBitValue = bits[index];              //to get maximum bit used for inputs
+   if(Module["ports"][p]["direction"] == "input")
+     lastInputBit = bits[index];
 
-  for (p in Module["ports"])
-  {
-    ports = Module["ports"][p];
-    names[index] = p;             //store all the ports names
-    /*console.log("port name:");
-    console.log(p);
-    console.log(ports["direction"]);*/
+   //rst,en won't be taken into paths so name is defaultValue
+   //but others will have their direction normally
 
-    var j;
-    for (j in ports["bits"])
-        bits[index] = ports["bits"][j];     //store all the ports bits
 
-    maxBitValue = bits[index];              //to get maximum bit used for inputs
-    if(Module["ports"][p]["direction"] == "input")
-      lastInputBit = bits[index];
+   g.setNode(bits[index],Module["ports"][p]["direction"]); //TODO
+   if(Module["ports"][p]["direction"] == "input")
+    g.setEdge("origin",bits[index]);
+   Mapp[indexMap++].push(bits[index++]);
+ }
 
-    //console.log(bits[index]); bits.toString(); names.toString();
+ for(p in Module["cells"])   //adding the cells as nodes to the graph
+   {g.setNode(p,Module["cells"][p]["type"]); Mapp[indexMap++].push(p);}
+ g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
 
-    //clk,rst,en won't be taken into paths so name is defaultValue
-    //but others will have their direction normally
+ //Adding edges
+ var toTemp = [];
+ var fromTemp = [];
+ index = 0; index2 = 0;
+ for(p in Module["cells"])
+ {
+   for(it in Module["cells"][p]["connections"])
+   {
+     var found = false;
+     var pathFound = Module["cells"][p]["connections"][it];
+     if(it == "Y" || it == "Q")  //output to the gate is a wire
+     {
+       if(pathFound >= lastInputBit+1 && pathFound <= maxBitValue)     //if output to gate is output to circuit
+         {g.setEdge(p,pathFound);}// console.log(1);}
+       else {
+         for(var element in fromTemp)
+         {
+           if(Number(g.edge("temp",fromTemp[element])) == Number(pathFound))
+           {
+             g.setEdge(p,fromTemp[element]);
+             found = true;
+           }
+         }
+         if(!found)
+         {g.setEdge(p,"temp",pathFound);
+         toTemp[index++] = p;}
+       }
+     }else {                  //input to gate
+       if(pathFound <= maxBitValue) //input to gate is input to whole circuit
+         {g.setEdge(pathFound,p);}//console.log(1);}
+       else {                //input to the gate is a wire
+         for(var element in toTemp)
+         {
+           if(Number(g.edge(toTemp[element],"temp")) == Number(pathFound))
+           {
+             g.setEdge(toTemp[element],p);
+             found = true;
+           }
+         }
+         if(!found)
+         {
+           g.setEdge("temp",p,pathFound);
+           fromTemp[index2++]=p;
+         }
+       }
+     }
+   }
+ }
+ g.removeNode("temp");
+ var nodes = g.nodes();
+ for(var node in nodes)
+ {
+     if(g.node(nodes[node]) == "output")
+     {
+       var outEdges = g.outEdges(nodes[node]);
+       for(var edge in outEdges)
+         g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
+     }
+ }
 
-    if(p != "clk" && p != "en" && p != "rst")
-        g.setNode(bits[index++],Module["ports"][p]["direction"]); //TODO
-    else
-        g.setNode(bits[index++],"default"); //TODO
-
-    //console.log(g.node(bits[index-1]));
+ var paths = [];
+ var path_type = [];
+ for ( var k = 0; k < 100; k++) // initialize path arrays
+ {
+   paths[k] = [];
+ }
+ var ii = 0;
+ //console.log(g.nodes());
+ //console.log(g.edges());
+ for(var ee = 0; ee < nodes.length; ee++)
+ {
+   if (String(g.node(nodes[ee])) == "input" || String(g.node(nodes[ee])) == "DFFPOSX1")
+     {
+       paths[ii].push(nodes[ee]);
+       dfs(nodes[ee]);
+     }
   }
-    //console.log("nodes after for loop:");
-    //console.log(g.nodes());
-    console.log("Max bit value is:" + maxBitValue);
-    //  console.log(lastInputBit);
+  //outputPaths();
 
-  for(p in Module["cells"])   //adding the cells as nodes to the graph
-    g.setNode(p,Module["cells"][p]["type"]);
+ request = new XMLHttpRequest();
+ request.open("GET", "/home/agalal/Downloads/DDproj/osu035.json", false);
+ request.send(null);
+ var osu_JSON_object = JSON.parse(request.responseText);
 
-  g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
-  //console.log("Total nodes:");
-  //console.log(g.nodes());
-  //Adding edges
-  var toTemp = [];
-  index = 0;
-  for(p in Module["cells"])
+//calculating capacitance of all cells in the next 3 lines
+ for(var i = 0; i < g.nodeCount(); i++)
+      Mapp[i][1] = 0;
+ pin_edges();
+
+ var tempTime = 0.001;
+
+ //Assuming input transition time of 0.001 for inputs for now
+ var node, allNodes = g.nodes();
+ for(node in allNodes)
+ {
+   if(g.node(allNodes[node]) == "input" || g.node(allNodes[node]) == "origin")
+   {
+     Mapp[searchMap(allNodes[node])].push(tempTime);
+     Mapp[searchMap(allNodes[node])].push(0);      //adding 0 delay to inputs
+   }
+ }
+
+//Starting the path by inputs
+for(node in allNodes)
+{
+  if(g.node(allNodes[node]) == "input")
+    getInputTransitionNdelay(allNodes[node]);
+}
+console.log(Mapp);
+
+function getInputTransitionNdelay(node)
+{
+  var adjEdges = g.outEdges(node);
+  console.log("eta5ed is "+ node);
+
+  var indexEdge;
+  for(indexEdge in adjEdges)
   {
-    console.log("Cell name: " + p);
-    for(it in Module["cells"][p]["connections"])
+    var target = adjEdges[indexEdge]["w"];
+    var shouldBeChecked = check(target);
+    console.log("target is " + target);
+    console.log("check: " + shouldBeChecked);
+    if(shouldBeChecked == true)
     {
-      var pathFound = Module["cells"][p]["connections"][it];
-      if(it == "Y" || it == "Q")  //output to the gate is a wire
+      var worstT = [];           //holds all the worst transition times we got
+      var worstD = [];          //holds all the worst delay times we got
+      var done = false;
+      var inEdges = g.inEdges(target);
+      var edgeIndex;
+      for(edgeIndex in inEdges)
       {
-        console.log("In output part with it: " + pathFound);
-        if(pathFound >= lastInputBit+1 && pathFound <= maxBitValue)     //if output to gate is output to circuit
-          g.setEdge(p,pathFound);
-        else {
-          g.setEdge(p,"temp",pathFound);
-          toTemp[index++] = p;
+        var parent = inEdges[edgeIndex]["v"];
+        var j = searchMap(parent);
+        var capc = Mapp[j][1]; //capacitance of parent
+        var inputT = Mapp[j][2]; //output transition time of parent
+        var pin = g.edge(parent,target);
+        if(g.node(target) == "output")
+        {
+          var x = Mapp[searchMap(parent)][2]; Mapp[searchMap(target)][2] = x;
+          Mapp[searchMap(target)].push(Mapp[searchMap(parent)][3]);
+          done = true;
+          break;
         }
+        var riseT = getRiseFallTime(pin,capc,inputT,target,0);
+        var fallT = getRiseFallTime(pin,capc,inputT,target,1);
+        var delay1 = getRiseFallTime(pin,capc,inputT,target,2);
+        var delay2 = getRiseFallTime(pin,capc,inputT,target,3);
+        if(delay1 > delay2) worstD.push(delay1);
+        else worstD.push(delay2);
 
-      }else {                  //input to gate
-        console.log("In input part with it: " + pathFound);
-        if(pathFound <= maxBitValue) //input to gate is input to whole circuit
-          g.setEdge(pathFound,p);
-        else {                //input to the gate is a wire
-          console.log("Input is a wire");
-          for(var element in toTemp)
-          {
-            //console.log(g.edge(toTemp[element],"temp"))
-            //console.log(pathFound);
-            if(Number(g.edge(toTemp[element],"temp")) == Number(pathFound))
-            {
-              //console.log("I FOUND SOMETHINGNNGNGNGNGNG");
-              g.setEdge(toTemp[element],p);
-              break;
-            }
-          }
-        }
+        if(riseT > fallT) worstT.push(riseT);
+        else worstT.push(fallT);
       }
-      //console.log("The edges now are: " + g.edges());
+      if(!done)
+      {
+        var max = -1000;
+        for (var ind in worstT)
+          if(worstT[ind] > max)
+            max = worstT[ind];
+        var i = searchMap(target);
+        Mapp[i].push(max);
+
+        max = -1000;
+        for (var ind in worstD)
+          if(worstD[ind] > max)
+            max = worstD[ind];
+        Mapp[i].push(max);
+        getInputTransitionNdelay(target);
+      }
     }
   }
-  g.removeNode("temp");
-  //console.log("Nodes:");
-  //console.log(g.nodes());
-  for(p in Module["cells"])
-      {console.log("cell: " + p + " has ");
-      console.log(g.nodeEdges(p));}
+}
+function getRiseFallTime(pin,capc,inputT,target,choose)
+{
+  var location, outputPin;
+  if(choose == 1)
+    location = "fall_transition";
+  else
+  if(choose == 0)
+    location = "rise_transition";
+    else if(choose == 3)
+      location = "cell_fall";
+      else location = "cell_rise";
 
-  //var edges = g.edges();
+  var type = g.node(target);
+  if(String(type).localeCompare("DFFPOSX1") != 0)
+    outputPin = "Y";
+  else outputPin = "Q";
+  if(pin == "D") return 0;
 
+  console.log("type: " + String(type));
+  console.log("pin: " + pin);
+  console.log("location: " + location);
+  console.log("output pin: " + outputPin);
 
-  var nodes = g.nodes();
-  var visited = {};
-  var stack = [];
-
- 
-
-  var iii = 0;
-  stack.push(nodes[0]);
-  visited[nodes[0]] = true;
-  console.log("NAWAWAWAWAWAWAWAWY");
-  while(stack.length != 0)
-  {
-    var current = stack[stack.length - 1];
-    //console.log(g.node(nodes[nn]), nodes[nn]);   
-    dfs(current); 
-  }
-
-  function dfs(s)
-  {
-    var adj_nodes = g.outEdges(s);
-    
-    if(adj_nodes.lenght != 0)
+  var capacitanceList = osu_JSON_object["cells"][type]["pins"][outputPin]["timing"][pin][location]["y_values"];
+  var diff = 1000; var closestC;
+  for(var i in capacitanceList)
+    if(Math.abs(capacitanceList[i] - capc) < diff)
     {
-      for (var e in adj_nodes)
+      diff = Math.abs(capacitanceList[i] - capc);
+      closestC = capacitanceList[i];
+    }
+  console.log("My incoming Capacitance is " + capc);
+  console.log("My incoming transition time is " + inputT);
+  console.log("closest Capacitance is " + closestC );
+  var transitionList = osu_JSON_object["cells"][type]["pins"][outputPin]["timing"][pin][location]["table"][closestC];
+  diff = 1000; var timeTransition;
+  for(var i in transitionList)
+  {
+    if(Math.abs(Number(i) - inputT) < diff)
+    {
+      diff = Math.abs(Number(i) - inputT);
+      timeTransition = transitionList[i];
+    }
+  }
+  console.log("closest time transition is " + timeTransition );
+  console.log("\n\n");
+  return timeTransition;
+}
+function check(node)
+{
+  var i = searchMap(node);
+  if(Mapp[i].length > 2) return false;  //checking if it was previously done
+  else
+  {
+    var inEdges = g.inEdges(node);
+    var edgeIndex;
+    for(edgeIndex in inEdges)
+    {
+      var target = inEdges[edgeIndex]["v"];
+      var i = searchMap(target);
+      if((Mapp[i].length != 4)) return false;
+    }
+    return true;  // all its inputs already have their transition time
+  }
+  return false;
+}
+function searchMap(node)
+{
+  for(var i = 0; i < g.nodeCount(); i++)
+  {
+    if(Mapp[i][0] == node)
+      return i;
+  }
+  return -1;
+}
+function outputPaths()
+{
+  for (var kk = 0; kk < ii; kk++)
+  {
+    var first, last;
+
+    first = paths[kk][0];
+    last = paths[kk][paths[kk].length - 1];
+
+    var ftype, ltype;
+
+    ftype = g.node(first);
+    ltype = g.node(last);
+
+    if (ftype == "input" && ltype == "output")
+      path_type[kk] = "input-output";
+    else
+    if (ftype == "DFFPOSX1" && ltype == "DFFPOSX1")
+      path_type[kk] = "reg-reg";
+    else
+    if (ftype == "DFFPOSX1" && ltype == "output")
+      path_type[kk] = "reg-output";
+   if (ftype == "input" && ltype == "DFFPOSX1")
+      path_type[kk] = "input-reg";
+
+     console.log(path_type[kk]);
+      for(var i in paths[kk])
+        console.log(paths[kk][i]);
+      console.log('\n\n');
+  }
+}
+function dfs(current)
+{
+  var adj_nodes = g.outEdges(current);
+
+  if(adj_nodes.length != 0)
+  {
+    for (var e in adj_nodes)
+    {
+      var target = g.node(adj_nodes[e]["w"])
+      if(!(target == "DFFPOSX1" || target == "output"))
+        {
+          paths[ii].push(adj_nodes[e]["w"]);
+          dfs(adj_nodes[e]["w"]);
+        }
+        else {   //if target is DFF or output
+          paths[ii].push(adj_nodes[e]["w"]);
+          ii++;
+          for(var i in paths[ii-1])
+               paths[ii].push(paths[ii-1][i]);
+         if(paths[ii].length != 0)
+           paths[ii].pop();
+          break;
+        }
+    }
+         if(paths[ii].length != 0)
+             {paths[ii].pop();}
+  }
+}
+function pin_edges()
+{
+   var edges = g.edges();
+   //var conn = my_JSON_object["modules"][]["cells"];
+   for (var e in edges)
+   {
+      var v = edges[e]["v"];
+      var w = edges[e]["w"];
+      var outpin;
+
+      if (g.node(v)!= "input" && g.node(v) != "output" && g.node(w) != "input" && g.node(w) != "output")
       {
-        if(!visited[adj_nodes[e]["w"]])
+          for (var ee in Module["cells"][v]["connections"])
           {
-            visited[adj_nodes[e]["w"]] = true;
-            stack.push(adj_nodes[e]["w"]);
-            console.log("path:",iii++ , adj_nodes[e]["w"]);
-            return;
+            if(ee == "Y")
+              {outpin = "Y"; break;}
+            else
+            if(ee == "Q")
+              {outpin = "Q"; break;}
           }
-          else
+
+          for (var xx in Module["cells"][w]["connections"])
           {
-            stack.pop();
+            //  console.log(Module["cells"][v]["connections"][outpin][0], "DFDFDF");
+            if(Module["cells"][w]["connections"][xx][0] == Module["cells"][v]["connections"][outpin][0])
+            {
+                  //console.log( xx, Module["cells"][w]["type"]  );
+                  g.setEdge(edges[e], xx);
+                  var cap = getOutputCap(xx, Module["cells"][w]["type"]);
+
+                  var amor;
+                  for (var amr in Mapp)
+                  {
+                    if (Mapp[amr][0] == v)
+                        amor = amr;
+                  }
+                  Mapp[amor][1] = Mapp[amor][1] + cap;
+                  //console.log(Mapp);
+            }
           }
       }
-    } 
-    else
-      stack.pop();
-  }
+      else
+      {
+        if (g.node(w) != "input" && g.node(w) != "output")
+        {
+            for (var xx in Module["cells"][w]["connections"])
+              {
+                  if (Module["cells"][w]["connections"][xx][0] == v)
+                        g.setEdge(edges[e], xx);
 
-  </script>
-  </html>
+              }
+        }
+      }
+   }
+}
+function getOutputCap(pin, type)
+{
+  return osu_JSON_object["cells"][type]["pins"][pin]["capacitance"];
+}
+ </script>
+ </html>
