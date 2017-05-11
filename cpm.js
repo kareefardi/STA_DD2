@@ -33,7 +33,7 @@ function get_u(edges)
 }
 function CPM(graph)
 {
-	var nodes_sorted = garphlib.topsort(graph);
+	var nodes_sorted = graphlib.topsort(graph);
 	var nodes_len = nodes_sorted.length;
 	var acc_delays = [];
 	var paths = [];
