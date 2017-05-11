@@ -62,6 +62,6 @@ function CPM(graph)
 		acc_delays[i] = delay + getDelay(nodes_sorted[i]);
 		paths[i] += ' ' + getNodeName(node);
 	}
-	crit_path = paths[i].split(' )
+	crit_path = paths[i].split(' );
 	return crit_path;
 }
