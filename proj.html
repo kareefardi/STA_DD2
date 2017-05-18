@@ -8,7 +8,7 @@
   <script>
 
   var request = new XMLHttpRequest();
-  request.open("GET","/home/agalal/Downloads/DDproj/Final Testing/my_alu_nl.json" , false);
+  request.open("GET","/home/agalal/Downloads/DDproj/Final Testing/FinalTest1.json" , false);
   request.send(null);
   var my_JSON_object = JSON.parse(request.responseText);
 
@@ -332,11 +332,34 @@
 
   //console.log("ID" , input_delay, "OD", output_delay, "TC", tc);
   outputPaths();    //deliverable1
-  outputCriticalPath();   //deliverable2
+  //outputCriticalPath();   //deliverable2 -karim
+  criticalPathOutput();       //deliverable2 -amr
   checkTimingViolations();    //deliverable3
   getAllSlacks();             //deliverable4(bonus)*/
+  
   //FUNCTIONS SECTION
 
+  function criticalPathOutput()
+  {
+    var maxDelay = -1000;
+    var critIndex;
+    for(var i = 0; i < paths.length; i++)
+    {
+      var sum = 0;
+      for (var j = 0; j < paths[i].length; j++)
+        sum += Mapp[searchMap(paths[i][j])][3];
+
+      if(sum > maxDelay)
+      {
+        maxDelay = sum;
+        critIndex = i;
+      }
+    }
+    console.log("Critical path is: ")
+    for(var i = 0; i < paths[critIndex].length; i++)
+      console.log(paths[critIndex][i]);
+    console.log("\n");
+  }
   function checkTimingViolations() //lessa hold violations
   {
       var tpd = 0;
@@ -683,7 +706,6 @@
               {paths[ii].pop();}
     }
   }
-
   function getAllSlacks()
   {
     console.log("Arrival, Required times and Slacks for all the gates: \n\n");
@@ -704,7 +726,6 @@
       console.log("\n");
     }
   }
-
   function getRequiredTimes(node)
   {
     var adjEdges = g.inEdges(node);
@@ -754,7 +775,6 @@
       }
     }
   }
-
   // capacitance naw
   function pin_edges()
   {
@@ -811,18 +831,15 @@
   {
     return osu_JSON_object["cells"][type]["pins"][pin]["capacitance"];
   }
-
   //cpm critical_path
   function getNodeName(node)
   {
     return node;
   }
-
   function getDelay(node)
   {
     return Mapp[searchMap(node)][3];
   }
-
   function find_index(arr, node)
   {
     var i = -1;
@@ -838,7 +855,6 @@
     }
     return i;
   }
-
   function get_u(edges)
   {
     var nodes = [];
