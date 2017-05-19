@@ -2,37 +2,30 @@
   <html>
 
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/jquery-3.2.1.min.js"></script>
-  <script src="/home/agalal/Downloads/DDproj/graphlib.min.js"></script>
-
+  <script src="/home/nawawy/dd2_2/amr/jquery-3.2.1.min.js"></script>
+  <script src="/home/nawawy/dd2_2/amr/graphlib.min.js"></script>
+ 
   <script>
-
   var request = new XMLHttpRequest();
-  request.open("GET","/home/agalal/Downloads/DDproj/Final Testing/FinalTest1.json" , false);
+  request.open("GET","/home/nawawy/dd2_2/amr/des2.json" , false);
   request.send(null);
   var my_JSON_object = JSON.parse(request.responseText);
-
   var M_name;
   var Module;
   for (M_name in my_JSON_object["modules"])
       Module = my_JSON_object["modules"][M_name];
-
   var g = new graphlib.Graph();
   var ports, p;
   var bits = [];
   var index = 0;
   var maxBitValue;        //maximum value given to i/o
   var lastInputBit;
-
   var Mapp = [];
   for(var i = 0; i < 200; i++)
       Mapp[i] = [];
-
   g.setNode("origin","origin");
-
   var indexMap = 0;
   Mapp[indexMap++].push("origin");
-
   for (p in Module["ports"])
   {
     ports = Module["ports"][p];
@@ -44,13 +37,10 @@
         g.setEdge("origin",bits[index]);
         Mapp[indexMap++].push(bits[index++]);
     }
-
     maxBitValue = bits[index-1];              //to get maximum bit used for inputs
     if(Module["ports"][p]["direction"] == "input")
       lastInputBit = bits[index-1];
-
   }
-
   /*Checking on nodes
   var nodes = g.nodes();
   for(var node in nodes)
@@ -59,7 +49,6 @@
     console.log(g.node(nodes[node]));
     console.log("one node finished \n\n");
   }*/
-
   for(p in Module["cells"])   //adding the cells as nodes to the graph
     {g.setNode(p,Module["cells"][p]["type"]); Mapp[indexMap++].push(p);}
   g.setNode("temp","temp"); //node to hold all not-unknown-yet edges
@@ -122,7 +111,6 @@
           g.removeEdge(outEdges[edge]["v"],outEdges[edge]["w"]);
       }
   }
-
   var paths = [];
   var path_type = [];
   for ( var k = 0; k < 100; k++) // initialize path arrays
@@ -143,15 +131,13 @@
   }
 //FIRST DELIVERABLE IS DONE
   request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/osu035.json", false);
+  request.open("GET", "/home/nawawy/dd2_2/amr/osu350.json", false);
   request.send(null);
   var osu_JSON_object = JSON.parse(request.responseText);
-
   //calculating capacitance of all cells in the next 3 lines
   for(var i = 0; i < g.nodeCount(); i++)
         Mapp[i][1] = 0;
   pin_edges();
-
   var tempTime = 0.001;
   //Assuming input transition time of 0.001 for inputs
   var node, allNodes = g.nodes();
@@ -168,32 +154,25 @@
       Mapp[searchMap(allNodes[node])].push(0);
     }
   }
-
   //getting transition times and delays starting the path by inputs
   for(node in allNodes)
   {
     if(g.node(allNodes[node]) == "input")
       getInputTransitionNdelay(allNodes[node]);
   }
-
   //getting critical path
   var critical_path = CPM(g);
-
   var edges = g.edges();
-
   var cp = {};
   for (var yy = 1; yy < critical_path.length; yy++)
   {
     cp[yy] = critical_path[yy];
   }
-
   var edg_outs = g.outEdges(critical_path[1]);
-
   //updating the critical paths with pins
   for (var rr = 1; rr < critical_path.length - 2 ; rr++)
   {
       var prev = critical_path[rr+1];
-
       // var edg_in = g.inEdges(critical_path[rr+1]);
       // console.log(critical_path[rr] ,"herrrr" , edg_outs);
       // console.log(critical_path[rr] ,"herrrr" , edg_in);
@@ -201,15 +180,12 @@
       {
         if (edg_outs[itr]["w"] == critical_path[rr+1])
         {
-
           critical_path[rr+1] = critical_path[rr+1] + "/" + g.edge(edg_outs[itr]);
         }
       }
       var edg_outs = g.outEdges(prev);
-
   }
   //SECOND DELIVERABLE IS DONE
-
   //getting setup and hold time
   var related_pin_transition = 0.1; //TODO
   for(node in allNodes)
@@ -219,12 +195,11 @@
         var holdRise,holdFall,setupRise,setupFall;
         var i = searchMap(allNodes[node]);
         //pins are trash
-        console.log(i);
+        //console.log(i);
         holdRise = getRiseFallTime("A",related_pin_transition,Mapp[i][2],allNodes[node],5);
         holdFall = getRiseFallTime("A",related_pin_transition,Mapp[i][2],allNodes[node],6);
         setupRise = getRiseFallTime("A",related_pin_transition,Mapp[i][2],allNodes[node],7);
         setupFall = getRiseFallTime("A",related_pin_transition,Mapp[i][2],allNodes[node],8);
-
         if(holdRise > holdFall)
           Mapp[i].push(holdRise);
         else Mapp[i].push(holdFall);
@@ -239,25 +214,19 @@
         Mapp[i].push(-1);      Mapp[i].push(-1);
       }
   }
-
   //getting critical path
   var critical_path = CPM(g);
-
   var edges = g.edges();
-
   var cp = {};
   for (var yy = 1; yy < critical_path.length; yy++)
   {
     cp[yy] = critical_path[yy];
   }
-
   var edg_outs = g.outEdges(critical_path[1]);
-
   //updating the critical paths with pins
   for (var rr = 1; rr < critical_path.length - 2 ; rr++)
   {
       var prev = critical_path[rr+1];
-
       // var edg_in = g.inEdges(critical_path[rr+1]);
       // console.log(critical_path[rr] ,"herrrr" , edg_outs);
       // console.log(critical_path[rr] ,"herrrr" , edg_in);
@@ -265,25 +234,26 @@
       {
         if (edg_outs[itr]["w"] == critical_path[rr+1])
         {
-
           critical_path[rr+1] = critical_path[rr+1] + "/" + g.edge(edg_outs[itr]);
         }
       }
       var edg_outs = g.outEdges(prev);
-
   }
-
   //DELIVERABLE 3 is DONE
   request = new XMLHttpRequest();
-  request.open("GET", "/home/agalal/Downloads/DDproj/timing.json", false);
+  request.open("GET", "/home/nawawy/dd2_2/amr/timing.json", false);
   request.send(null);
   var timing_object = JSON.parse(request.responseText);
-
   var tc = Number(timing_object["clk_period"]);
   var input_delay = timing_object["input_delay"] * tc;
   var output_delay = timing_object["output_delay"] * tc;
-  //giving inputs/outputs their delay
 
+  //skew time
+  var randnum = 0;
+  var t_skew =  randnum * tc;
+
+
+  //giving inputs/outputs their delay
   for(node in allNodes)
   {
     if(g.node(allNodes[node]) == "input")
@@ -295,14 +265,12 @@
       if(g.node(allNodes[node]) == "origin")
         Mapp[searchMap(allNodes[node])][3] = 0;
   }
-
   //giving inputs arrival times same as input delay
   for(node in allNodes)
   {
     if(g.node(allNodes[node]) == "input" || g.node(allNodes[node]) == "origin")
       Mapp[searchMap(allNodes[node])].push(Mapp[searchMap(allNodes[node])][3]);
   }
-
   //BONUS: getting actual arrival times
   var wireDelay = 0.2; //TODO
   for(node in allNodes)
@@ -310,13 +278,11 @@
     if(g.node(allNodes[node]) == "input")
       getArrivalTimes(allNodes[node]);
   }
-
   var maxSetup = 0;
   //getting max setup time
   for(node in allNodes)
     if(Mapp[searchMap(allNodes[node])][5] > maxSetup)
       maxSetup = Mapp[searchMap(allNodes[node])][5];
-
   //giving outputs the required time of tc - worst skew time
   //giving everyoe initially a very high required arrival time
   for(node in allNodes)
@@ -324,21 +290,19 @@
       Mapp[searchMap(allNodes[node])].push(tc - maxSetup);
     else
       Mapp[searchMap(allNodes[node])].push(1000);
-
   //getting required arrival time
   for(node in allNodes)
     if(g.node(allNodes[node]) == "output")
       getRequiredTimes(allNodes[node]);
-
   //console.log("ID" , input_delay, "OD", output_delay, "TC", tc);
   outputPaths();    //deliverable1
   //outputCriticalPath();   //deliverable2 -karim
   criticalPathOutput();       //deliverable2 -amr
   checkTimingViolations();    //deliverable3
+  checkHoldViolation();
   getAllSlacks();             //deliverable4(bonus)*/
   
   //FUNCTIONS SECTION
-
   function criticalPathOutput()
   {
     var maxDelay = -1000;
@@ -348,7 +312,6 @@
       var sum = 0;
       for (var j = 0; j < paths[i].length; j++)
         sum += Mapp[searchMap(paths[i][j])][3];
-
       if(sum > maxDelay)
       {
         maxDelay = sum;
@@ -360,13 +323,12 @@
       console.log(paths[critIndex][i]);
     console.log("\n");
   }
-  function checkTimingViolations() //lessa hold violations
+
+  function checkTimingViolations() 
   {
       var tpd = 0;
-      var tcq,  left, right;
-
-      console.log("Checking for timing violations: \n\n");
-
+      var tcq,  left, right, setup;
+      console.log("Checking for setup timing violations: \n\n");
       for (var pi in paths)
       {
           if(path_type[pi] == "input-reg")
@@ -375,19 +337,15 @@
               {
                 tpd = tpd + Mapp[searchMap(paths[pi][indx])][3];
               }
-
               tcq = Mapp[searchMap(paths[pi][paths[pi].length - 1])][3];
               setup = Mapp[searchMap(paths[pi][paths[pi].length - 1])][4];
-
-              left = tcq + tpd + input_delay;
+              left = tcq + tpd + input_delay + t_skew;
               right = tc - setup;
-
               if(!(left < right))
                   console.log("Time Violation from input-reg path" , paths[pi]);
               else
                   console.log("Path Validated" , paths[pi]);
-
-               console.log("left", tcq, "right", Mapp);
+               console.log("left", left, "right", right);
           }
           else
              if(path_type[pi] == "reg-reg")
@@ -396,18 +354,14 @@
                   {
                     tpd = tpd + Mapp[searchMap(paths[pi][indx])][3];
                   }
-
                   tcq = Mapp[searchMap(paths[pi][paths[pi].length - 1])][3];
                   setup = Mapp[searchMap(paths[pi][paths[pi].length - 1])][4];
-
-                  left = tcq + tpd;
+                  left = tcq + tpd + t_skew;
                   right = tc - setup;
-
                   if(!(left < right))
                       console.log("Time Violation from reg-reg path" , paths[pi]);
                   else
                       console.log("Path Validated" , paths[pi]);
-
                   console.log("left", left, "right", right);
              }
              else
@@ -417,48 +371,86 @@
                   {
                     tpd = tpd + Mapp[searchMap(paths[pi][indx])][3];
                   }
-
                   tcq = Mapp[searchMap(paths[pi][0])][3];
                   setup = Mapp[searchMap(paths[pi][paths[pi].length - 1])][4];
-
-                  left = tcq + tpd;
+                  left = tcq + tpd + t_skew;
                   right = tc - setup + output_delay;
-
                   if(!(left < right))
                       console.log("Time Violation from reg-output path" , paths[pi]);
                   else
                       console.log("Path Validated" , paths[pi]);
-
                   console.log("left", left, "right", right);
              }
-             else
-               if(path_type[pi] == "input-output")
-             {
-                  for (var indx = 0; indx < paths[pi].length -1; indx++)
-                  {
-                    tpd = tpd + Mapp[searchMap(paths[pi][indx])][3];
-                  }
-
-
-                  left = input_delay + tpd;
-                  right = tc  + output_delay;
-
-                  if(!(left < right))
-                      console.log("Time Violation from reg-output path" , paths[pi]);
-                  else
-                      console.log("Path Validated" , paths[pi]);
-
-                  console.log("left", left, "right", right);
-             }
-
+            //  else
+            //    if(path_type[pi] == "input-output")
+            //  {
+            //       for (var indx = 0; indx < paths[pi].length -1; indx++)
+            //       {
+            //         tpd = tpd + Mapp[searchMap(paths[pi][indx])][3];
+            //       }
+            //       left = input_delay + tpd;
+            //       right = tc  + output_delay;
+            //       if(!(left < right))
+            //           console.log("Time Violation from input-output path" , paths[pi]);
+            //       else
+            //           console.log("Path Validated" , paths[pi]);
+            //       console.log("left", left, "right", right);
+            //  }
     }
-
     console.log("\n\n");
   }
+
+  function checkHoldViolation()
+  {
+    console.log("Checking for hold timing violations: \n\n");
+    var all_nodes = g.nodes();
+    var tpd = 0; min = 100000;
+    var hold;
+    var t_cont;
+    var min_i = 0;
+    var tcq_min = 0.13;
+    for(var oo = 0; oo < all_nodes.length; oo++)
+    {
+      if(g.node(all_nodes[oo]) == "DFFPOSX1")
+      {
+        for(var pp in paths)
+        {
+          if(paths[pp][paths[pp].length -1] == all_nodes[oo] || paths[pp][0] == all_nodes[oo])
+          {
+            for (var index = 0; index < paths[pp].length -1; index++)
+              {
+                tpd = tpd + Mapp[searchMap(paths[pp][index])][3];
+              }
+
+              if (tpd < min)
+                  {
+                    min = tpd;
+                    min_i = pp;                 
+                  }
+          }
+        }
+
+         t_cont = min;
+         hold =  Mapp[searchMap(all_nodes[oo])][5];
+         var left = t_skew + hold;
+         var right = t_cont + tcq_min;
+
+          if(!(left < right))
+                      console.log("Hold Time Violation from" , path_type[min_i], "path:", paths[min_i]);
+                  else
+                      console.log("Path Validated from Hold check" , paths[min_i]);
+                  console.log("left", left, "right", right);
+
+          console.log("\n\n");
+
+          min = 10000;
+      }
+    }
+  }
+
   function outputCriticalPath()
   {
       console.log("Critical Paths: \n\n");
-
       console.log("-------------------------------------------------");
       console.log("Pin        type        Incr      Path Delay");
       for(var erm in cp)
@@ -467,7 +459,6 @@
           console.log(critical_path[erm] , "      ",  (Mapp[searchMap(cp[erm])][3] - Mapp[searchMap(cp[erm-1])][3]) , Mapp[searchMap(cp[erm])][3], "      ", Mapp[searchMap(cp[erm])][4]);
         else
           console.log(critical_path[erm] , "      ",  0  , "      ", 0 , "      ", Mapp[searchMap(cp[erm])][4]);
-
       }
       console.log("-------------------------------------------------");
       console.log("Data Arrival Time                        ", Mapp[searchMap(cp[erm])][3] , "\n\n");
@@ -477,7 +468,6 @@
   {
     var adjEdges = g.outEdges(node);
     //console.log("eta5ed is "+ node);
-
     var indexEdge;
     for(indexEdge in adjEdges)
     {
@@ -512,7 +502,6 @@
           var delay2 = getRiseFallTime(pin,capc,inputT,target,3);
           if(delay1 > delay2) worstD.push(delay1);
           else worstD.push(delay2);
-
           if(riseT > fallT) worstT.push(riseT);
           else worstT.push(fallT);
         }
@@ -524,7 +513,6 @@
               max = worstT[ind];
           var i = searchMap(target);
           Mapp[i].push(max);
-
           max = -1000;
           for (var ind in worstD)
             if(worstD[ind] > max)
@@ -546,19 +534,16 @@
         else if(choose == 3)
           location = "cell_fall";
           else location = "cell_rise";
-
       var type = g.node(target);
       if(String(type).localeCompare("DFFPOSX1") != 0)
         outputPin = "Y";
       else outputPin = "Q";
       if(pin == "D") return 0;
-
       //console.log("choose: " + choose);
       //console.log("type: " + String(type));
       //console.log("pin: " + pin);
       //console.log("location: " + location);
       //console.log("output pin: " + outputPin);
-
       var capacitanceList;
       if(choose < 5)
       capacitanceList = osu_JSON_object["cells"][type]["pins"][outputPin]["timing"][pin][location]["y_values"];
@@ -570,8 +555,6 @@
           capacitanceList = osu_JSON_object["cells"][type]["pins"]["D"]["timing"]["CLK"]["setup_rising"]["rise_constraint"]["y_values"];
           else if ( choose == 8)  // to get setup falling
             capacitanceList = osu_JSON_object["cells"][type]["pins"]["D"]["timing"]["CLK"]["setup_rising"]["fall_constraint"]["y_values"];
-
-
       var diff = 1000; var closestC;
       for(var i in capacitanceList)
         if(Math.abs(capacitanceList[i] - capc) < diff)
@@ -593,7 +576,6 @@
           transitionList = osu_JSON_object["cells"][type]["pins"]["D"]["timing"]["CLK"]["setup_rising"]["rise_constraint"]["table"][closestC];
           else if ( choose == 8)  // to get setup falling
             transitionList = osu_JSON_object["cells"][type]["pins"]["D"]["timing"]["CLK"]["setup_rising"]["fall_constraint"]["table"][closestC];
-
       diff = 1000; var timeTransition;
       for(var i in transitionList)
       {
@@ -620,7 +602,6 @@
       cmp1 = 6;
       cmp2 = 7;
     }
-
     var i = searchMap(node);
     if(Mapp[i].length > cmp1) return false;  //checking if it was previously done
     else      //checking all its inputs have their transition time/delay
@@ -665,12 +646,9 @@
       else
       if (ftype == "DFFPOSX1" && ltype == "output")
         path_type[kk] = "reg-output";
-
       if (ftype == "input" && ltype == "DFFPOSX1")
         path_type[kk] = "input-reg";
-
       console.log(path_type[kk]);
-
       for(var i in paths[kk])
           console.log(paths[kk][i]);
       console.log('\n\n');
@@ -695,10 +673,8 @@
             ii++;
             for(var i in paths[ii-1])
                 paths[ii].push(paths[ii-1][i]);
-
             if(paths[ii].length != 0)
                 paths[ii].pop();
-
               break;
           }
       }
@@ -709,19 +685,15 @@
   function getAllSlacks()
   {
     console.log("Arrival, Required times and Slacks for all the gates: \n\n");
-
     var tot_nodes = g.nodes();
     for (var iterat in tot_nodes)
     {
       console.log("Node: " + tot_nodes[iterat]);
       var arrive = Mapp[searchMap(tot_nodes[iterat])][6];
       var req = Mapp[searchMap(tot_nodes[iterat])][7];
-
       console.log("Arrival Time: ",arrive);
       console.log("Required Time: ",req);
-
       Mapp[searchMap(tot_nodes[iterat])].push(req - arrive);
-
       console.log("Slack is " , Mapp[searchMap(tot_nodes[iterat])][8]);
       console.log("\n");
     }
@@ -766,10 +738,8 @@
           if(worstArrival < Mapp[j][6] + wireDelay + Mapp[i][3])
             worstArrival = Mapp[j][6] + wireDelay + Mapp[i][3];
             // console.log("worstArrival after: " + worstArrival);
-
         }
         // console.log("worstArrival final: " + worstArrival);
-
         Mapp[searchMap(target)].push(worstArrival); //found worst arrival for this node
         getArrivalTimes(target);
       }
@@ -861,7 +831,6 @@
     for (var i = 0; i < edges.length; i++)
       nodes[i] = edges[i]["v"];
     return nodes;
-
   }
   function CPM(graph)
   {
@@ -871,23 +840,19 @@
     // console.log(nodes_sorted);
     var acc_delays = [];
     var paths = [];
-
     paths[0] = getNodeName(nodes_sorted[0]);
     // console.log(paths[0]+"hello");
     // cosnole.log(paths[0]);
     acc_delays[0] = 0;
-
     for (var iter = 1; iter < nodes_len; iter++)
     {
       var delay = -1;
       var path;
-
       var node = nodes_sorted[iter];
       var in_edges = graph.inEdges(node);
       var in_edges_len = in_edges.length;
       // prompt(in_edges_len);
       var prev_nodes = get_u(in_edges);
-
       for (var j = 0; j < in_edges_len; j++) {
         var idx = find_index(nodes_sorted, prev_nodes[j]);
         // console.log(iter, idx, acc_delays[idx]);
@@ -897,7 +862,6 @@
           // console.log("heree", path);
         }
       }
-
       acc_delays[iter] = delay + getDelay(nodes_sorted[iter]);
       paths[iter] = path + ' ' + getNodeName(node);
       // console.log(iter);
