@@ -1,0 +1,274 @@
+{
+  "creator": "Yosys 0.7 (git sha1 UNKNOWN, clang 3.8.1-23 -fPIC -Os)",
+  "modules": {
+    "top": {
+      "attributes": {
+        "top": 1,
+        "src": "seq2.v:17"
+      },
+      "ports": {
+        "a": {
+          "direction": "input",
+          "bits": [ 2 ]
+        },
+        "b": {
+          "direction": "input",
+          "bits": [ 3 ]
+        },
+        "d": {
+          "direction": "input",
+          "bits": [ 4 ]
+        },
+        "clk": {
+          "direction": "input",
+          "bits": [ 5 ]
+        },
+        "rst": {
+          "direction": "input",
+          "bits": [ 6 ]
+        },
+        "out": {
+          "direction": "output",
+          "bits": [ 7 ]
+        }
+      },
+      "cells": {
+        "$abc$60$auto$blifparse.cc:286:parse_blif$61": {
+          "hide_name": 1,
+          "type": "INVX1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 6 ],
+            "Y": [ 8 ]
+          }
+        },
+        "$abc$60$auto$blifparse.cc:286:parse_blif$62": {
+          "hide_name": 1,
+          "type": "OAI21X1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 4 ],
+            "B": [ 9 ],
+            "C": [ 8 ],
+            "Y": [ 10 ]
+          }
+        },
+        "$abc$60$auto$blifparse.cc:286:parse_blif$63": {
+          "hide_name": 1,
+          "type": "AOI21X1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 4 ],
+            "B": [ 9 ],
+            "C": [ 10 ],
+            "Y": [ 11 ]
+          }
+        },
+        "$abc$60$auto$blifparse.cc:286:parse_blif$64": {
+          "hide_name": 1,
+          "type": "NAND2X1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 2 ],
+            "B": [ 3 ],
+            "Y": [ 12 ]
+          }
+        },
+        "$abc$60$auto$blifparse.cc:286:parse_blif$65": {
+          "hide_name": 1,
+          "type": "NOR2X1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 6 ],
+            "B": [ 12 ],
+            "Y": [ 13 ]
+          }
+        },
+        "$abc$60$auto$blifparse.cc:286:parse_blif$66": {
+          "hide_name": 1,
+          "type": "AND2X2",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "A": [ 3 ],
+            "B": [ 14 ],
+            "Y": [ 7 ]
+          }
+        },
+        "$auto$simplemap.cc:420:simplemap_dff$57": {
+          "hide_name": 1,
+          "type": "DFFPOSX1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "CLK": [ 5 ],
+            "D": [ 13 ],
+            "Q": [ 9 ]
+          }
+        },
+        "$auto$simplemap.cc:420:simplemap_dff$59": {
+          "hide_name": 1,
+          "type": "DFFPOSX1",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "connections": {
+            "CLK": [ 5 ],
+            "D": [ 11 ],
+            "Q": [ 14 ]
+          }
+        }
+      },
+      "netnames": {
+        "$abc$60$n10_1": {
+          "hide_name": 1,
+          "bits": [ 8 ],
+          "attributes": {
+          }
+        },
+        "$abc$60$n11_1": {
+          "hide_name": 1,
+          "bits": [ 10 ],
+          "attributes": {
+          }
+        },
+        "$abc$60$n13": {
+          "hide_name": 1,
+          "bits": [ 12 ],
+          "attributes": {
+          }
+        },
+        "$abc$60$n3": {
+          "hide_name": 1,
+          "bits": [ 11 ],
+          "attributes": {
+          }
+        },
+        "$abc$60$n5": {
+          "hide_name": 1,
+          "bits": [ 13 ],
+          "attributes": {
+          }
+        },
+        "Dff.clk": {
+          "hide_name": 0,
+          "bits": [ 5 ],
+          "attributes": {
+            "src": "seq2.v:3"
+          }
+        },
+        "Dff.q": {
+          "hide_name": 0,
+          "bits": [ 9 ],
+          "attributes": {
+            "src": "seq2.v:5"
+          }
+        },
+        "Dff.rst": {
+          "hide_name": 0,
+          "bits": [ 6 ],
+          "attributes": {
+            "src": "seq2.v:4"
+          }
+        },
+        "Dff1.clk": {
+          "hide_name": 0,
+          "bits": [ 5 ],
+          "attributes": {
+            "src": "seq2.v:3"
+          }
+        },
+        "Dff1.q": {
+          "hide_name": 0,
+          "bits": [ 14 ],
+          "attributes": {
+            "src": "seq2.v:5"
+          }
+        },
+        "Dff1.rst": {
+          "hide_name": 0,
+          "bits": [ 6 ],
+          "attributes": {
+            "src": "seq2.v:4"
+          }
+        },
+        "a": {
+          "hide_name": 0,
+          "bits": [ 2 ],
+          "attributes": {
+            "src": "seq2.v:18"
+          }
+        },
+        "b": {
+          "hide_name": 0,
+          "bits": [ 3 ],
+          "attributes": {
+            "src": "seq2.v:19"
+          }
+        },
+        "clk": {
+          "hide_name": 0,
+          "bits": [ 5 ],
+          "attributes": {
+            "src": "seq2.v:21"
+          }
+        },
+        "d": {
+          "hide_name": 0,
+          "bits": [ 4 ],
+          "attributes": {
+            "src": "seq2.v:20"
+          }
+        },
+        "out": {
+          "hide_name": 0,
+          "bits": [ 7 ],
+          "attributes": {
+            "src": "seq2.v:23"
+          }
+        },
+        "rst": {
+          "hide_name": 0,
+          "bits": [ 6 ],
+          "attributes": {
+            "src": "seq2.v:22"
+          }
+        },
+        "tmp2": {
+          "hide_name": 0,
+          "bits": [ 9 ],
+          "attributes": {
+            "src": "seq2.v:27"
+          }
+        },
+        "tmp3": {
+          "hide_name": 0,
+          "bits": [ 14 ],
+          "attributes": {
+            "src": "seq2.v:28"
+          }
+        }
+      }
+    }
+  }
+}
